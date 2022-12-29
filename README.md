@@ -3,12 +3,12 @@
 Code generating results for this [paper](https://arxiv.org/abs/2212.10696).
 Implementation of Intervention Based Training for conversational question answering (CoQA dataset) on BERT, RoBERTa and XLNet.
 
-## Features:
+## Features
 1) Train on the original dataset
 2) Train on the combined O, TS, TS-R dataset
 3) Evaluation on O,TS, TS-R
 
-## Usage:
+## Usage
 #### Clone this repository
 #### Install the necessary requirements in the environment.yml file
 We recommend anaconda for this.
