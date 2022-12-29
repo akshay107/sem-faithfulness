@@ -21,7 +21,7 @@ python main.py --eval TS --output XLNet_orig 		#(evaluate the model at XLNet_ori
 python main.py --train C --eval O --output XLNet_orig 	#(combined training and eval on O)
 ```
 
-3)Following eval you will have a predict_normal_det.json file at the provided directory. Then run
+3) Following eval you will have a predict_normal_det.json file at the provided directory. Then run
 
 ```
 python ./results/convert_coqa.py --input_file ./[directory]/predict_normal_det.json --output_file pred.json

@@ -21,7 +21,7 @@ python main.py --eval TS --output Roberta_orig 			#(evaluate the model at Robert
 python main.py --train C --eval O --output Roberta_orig 	#(combined training and eval on O)
 ```
 
-3)Following eval you will have a predictions.json file at the provided directory. Then run
+3) Following eval you will have a predictions.json file at the provided directory. Then run
 ```
 python evaluate-v1.0.py --data-file data/coqa-dev-v1.0.json --pred-file [directory]/predictions.json
 ```
