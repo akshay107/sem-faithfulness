@@ -12,9 +12,10 @@ from processors.coqa import CoqaPipeline, Tokenizer, XLNetExampleProcessor, XLNe
 import numpy as np
 import getopt,sys
 
-pretrained_model="xlnet-base-cased"
+pretrained_model="xlnet-large-cased"
 max_seq_length = 512
 epochs = 1.0
+
 evaluation_batch_size = 16
 train_batch_size = 4
 lr = 3e-5
@@ -22,9 +23,9 @@ MIN_FLOAT = -1e30
 MAX_FLOAT = 1e30
 top_k = 5
  
-class XLNetBaseModel(XLNetModel):
+class XLNetLargeModel(XLNetModel):
     def __init__(self,config, load_pre = False):
-        super(XLNetBaseModel,self).__init__(config)
+        super(XLNetLargeModel,self).__init__(config)
         self.xlnet = XLNetModel.from_pretrained(pretrained_model, config=config,) if load_pre else XLNetModel(config)
         hidden_size = config.hidden_size
         self.seq_len = max_seq_length
@@ -265,8 +266,8 @@ def train(train_dataset, model, tokenizer, device,output_directory):
     return train_loss/counter
 
 
-def Write_predictions(model, tokenizer, device, dataset_type = None, use_gpt = None, output_directory = None):
-    dataset, examples, features = load_dataset(tokenizer, evaluate=True, use_gpt = use_gpt, dataset_type = dataset_type)
+def Write_predictions(model, tokenizer, device, dataset_type = None,output_directory = None, use_gpt = None):
+    dataset, examples, features = load_dataset(tokenizer, evaluate=True,dataset_type = dataset_type, use_gpt = use_gpt)
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     evalutation_sampler = SequentialSampler(dataset)
@@ -307,7 +308,7 @@ def load_dataset(tokenizer, evaluate=False, dataset_type = None, use_gpt = None)
     proc = processor.get_dev_examples if evaluate else processor.get_train_examples
     assert not evaluate or (len(dataset_type) == 1)
     for datas in dataset_type:
-        examples.extend(proc(dataset_type = datas,use_gpt = use_gpt))
+        examples.extend(proc(dataset_type = datas, use_gpt = use_gpt))
     feat_extract = XLNetExampleProcessor(tokenizer)
     features, dataset = feat_extract.convert_examples_to_features(examples, not evaluate)
     if evaluate:
@@ -320,7 +321,7 @@ def manager(isTraining,dataset_type, output_directory, use_gpt = None):
     config = XLNetConfig.from_pretrained(pretrained_model)
     if isTraining:
         tokenizer = Tokenizer(pretrained_model)
-        model = XLNetBaseModel(config, load_pre = True)
+        model = XLNetLargeModel(config, load_pre = True)
         model.to(device)
         if os.path.exists(output_directory) and os.listdir(output_directory):
             raise ValueError(f"Output directory {output_directory}  already exists, Change output_directory name")
@@ -332,7 +333,7 @@ def manager(isTraining,dataset_type, output_directory, use_gpt = None):
         tokenizer.save_pretrained(output_directory)
         torch.save(model.state_dict(), os.path.join(output_directory,'tweights.pt'))
     else:
-        model = XLNetBaseModel(config)
+        model = XLNetLargeModel(config)
         model.load_state_dict(torch.load(os.path.join(output_directory,'tweights.pt')))
         model.to(device)
         tokenizer = Tokenizer(output_directory)
@@ -376,7 +377,7 @@ def main():
                     return
             elif currentArgument in ("-o", "--output"):
                 output_directory = currentValue
-             
+
             elif currentArgument in ("-gpt", "--gpt"):
                 use_gpt = currentValue
 
