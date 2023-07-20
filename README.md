@@ -18,6 +18,6 @@ conda env create -f environment.yml
 conda activate RobustProject
 ```
 #### Download the datasets.
-Datasets for negation intervention, predicate argument structure experiments, and the Aug dataset (corresponding to TS-R+Aug for CoQA and OS-R+Aug for HotpotQA) is available [here](https://drive.google.com/drive/u/0/folders/1gHHPyjgkhgVNlVwQ16bA54_wt6eM_bfH).
+Datasets for negation intervention, predicate argument structure experiments, and the Aug dataset (corresponding to TS-R+Aug for CoQA and OS-R+Aug for HotpotQA) are available [here](https://drive.google.com/drive/u/0/folders/1gHHPyjgkhgVNlVwQ16bA54_wt6eM_bfH).
 
 #### Follow the instructions in the corresponding folder
