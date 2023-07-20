@@ -1,7 +1,7 @@
 # Semantic Faithfullness of Language Models
 
 Code generating results for this [paper](https://arxiv.org/abs/2212.10696).
-Implementation of Intervention Based Training for conversational question answering (CoQA and HotpotQA dataset) on BERT, RoBERTa and XLNet.
+Implementation of Intervention Based Training for question answering (CoQA and HotpotQA dataset) on BERT, RoBERTa and XLNet.
 
 ## Features
 1) Train on the original dataset
