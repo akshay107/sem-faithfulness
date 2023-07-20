@@ -14,15 +14,15 @@ import getopt,sys
 
 train_file="coqa-train-v1.0.json"
 predict_file="coqa-dev-v1.0.json"
-pretrained_model="bert-base-uncased"
+pretrained_model="bert-large-uncased"
 epochs = 1.0
 evaluation_batch_size=16
 train_batch_size=4
 MIN_FLOAT = -1e30
  
-class BertBaseUncasedModel(BertPreTrainedModel):
+class BertLargeUncasedModel(BertPreTrainedModel):
     def __init__(self,config,activation='relu'):
-        super(BertBaseUncasedModel, self).__init__(config)
+        super(BertLargeUncasedModel, self).__init__(config)
         self.bert = BertModel(config)
         hidden_size = config.hidden_size
         self.fc = nn.Linear(hidden_size,hidden_size, bias = False)
@@ -196,7 +196,7 @@ def manager(isTraining, dataset_type, output_directory, use_gpt = None):
     config = BertConfig.from_pretrained(pretrained_model)
     if isTraining:
         tokenizer = BertTokenizer.from_pretrained(pretrained_model)
-        model = BertBaseUncasedModel.from_pretrained(pretrained_model, from_tf=bool(".ckpt" in pretrained_model), config=config,cache_dir=None,)
+        model = BertLargeUncasedModel.from_pretrained(pretrained_model, from_tf=bool(".ckpt" in pretrained_model), config=config,cache_dir=None,)
         model.to(device)
         if (os.path.exists(output_directory) and os.listdir(output_directory)):
             raise ValueError(f"Output directory {output_directory}  already exists, Change output_directory name")
@@ -209,7 +209,7 @@ def manager(isTraining, dataset_type, output_directory, use_gpt = None):
         model_to_save.save_pretrained(output_directory)
         tokenizer.save_pretrained(output_directory)
     else:
-        model = BertBaseUncasedModel.from_pretrained(output_directory)
+        model = BertLargeUncasedModel.from_pretrained(output_directory)
         tokenizer = BertTokenizer.from_pretrained(output_directory, do_lower_case=True)
         model.to(device)
         Write_predictions(model, tokenizer, device, dataset_type = dataset_type[0], output_directory = output_directory, use_gpt = use_gpt)
@@ -220,7 +220,7 @@ def main():
     output_directory = "Bert"
     argumentList = sys.argv[1:]
     options = "ht:e:o:"
-    long_options = ["help", "train=","eval=", "output=", "gpt="]
+    long_options = ["help", "train=","eval=", "output=","gpt="]
     try:
         arguments, values = getopt.getopt(argumentList, options, long_options)
         for currentArgument, currentValue in arguments:

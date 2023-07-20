@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
 from transformers import (AdamW, AutoConfig, AutoTokenizer, get_linear_schedule_with_warmup)
-from processors.coqa import Extract_Features, Processor, Result
-from processors.metrics import get_predictions
+from processors.hotpotqa import Extract_Features, Processor, Result
+from processors.metrics_hotpotqa import get_predictions
 from transformers import BertModel, BertPreTrainedModel, BertTokenizer, BertConfig
 import torch
 import torch.nn as nn
@@ -12,8 +12,8 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 import getopt,sys
 
-train_file="coqa-train-v1.0.json"
-predict_file="coqa-dev-v1.0.json"
+train_file="hotpot_train_v1.1_new.json"
+predict_file="hotpot_dev_distractor_v1_new.json"
 pretrained_model="bert-base-uncased"
 epochs = 1.0
 evaluation_batch_size=16
@@ -163,7 +163,6 @@ def Write_predictions(model, tokenizer, device, dataset_type = None, output_dire
             mod_results.append(result)
 
     output_prediction_file = os.path.join(output_directory, "predictions.json")
-    #output_prediction_file = os.path.join(output_directory, "predictions-wc-var3.json")
     get_predictions(examples, features, mod_results, 20, 30, True, output_prediction_file, False, tokenizer)
 
 
@@ -176,12 +175,11 @@ def load_dataset(tokenizer, evaluate=False, dataset_type = None, use_gpt = None)
     else:
         processor = Processor()
         if evaluate:
-            examples = processor.get_examples("data", 2,filename=predict_file, threads=12, dataset_type = dataset_type, use_gpt = use_gpt)
-            #examples = processor.get_examples("data", 0,filename=predict_file, threads=12, dataset_type = dataset_type)
+            examples = processor.get_examples("data", 0,filename=predict_file, threads=12, dataset_type = dataset_type, use_gpt = use_gpt)
         else:
             examples = []
             for datas in dataset_type:
-                examples.extend(processor.get_examples("data", 2,filename=train_file, threads=12,dataset_type = datas))
+                examples.extend(processor.get_examples("data", 0,filename=train_file, threads=12,dataset_type = datas))
 
     features, dataset = Extract_Features(examples=examples,
             tokenizer=tokenizer,max_seq_length=512, doc_stride=128, max_query_length=64, is_training=not evaluate, threads=12)
@@ -223,6 +221,7 @@ def main():
     long_options = ["help", "train=","eval=", "output=", "gpt="]
     try:
         arguments, values = getopt.getopt(argumentList, options, long_options)
+        use_gpt = None
         for currentArgument, currentValue in arguments:
             if currentArgument in ("-h", "--Help"):
                 print ("""python main.py --train [O|C] --eval [O|TS|RG] --output [directory name]\n
@@ -236,14 +235,14 @@ def main():
      
             elif currentArgument in ("-t", "--train"):
                 isTraining = True
-                opts = {'O':[None],'C':[None, 'TS','RG']}
+                opts = {'O':[None],'C':[None,'RG']}
                 if currentValue in opts:
                     train_dataset_type = opts[currentValue]
                 else:
                     print('See "python main.py --help" for usage')
                     return
             elif currentArgument in ("-e", "--eval"):
-                opts = {'O':[None],'TS':['TS'], 'RG':['RG']}
+                opts = {'O':[None], 'RG':['RG']}
                 if currentValue in opts:
                     eval_dataset_type = opts[currentValue]
                     isEval = True
