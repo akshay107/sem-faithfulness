@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from tqdm import tqdm, trange
 from transformers import (AdamW, AutoConfig, AutoTokenizer, get_linear_schedule_with_warmup)
-from processors.coqa import Extract_Features, Processor, Result
-from processors.metrics import get_predictions
+from processors.hotpotqa import Extract_Features, Processor, Result
+from processors.metrics_hotpotqa import get_predictions
 from transformers import RobertaModel, RobertaTokenizer, RobertaConfig
 import torch
 import torch.nn as nn
@@ -12,17 +12,18 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 import getopt,sys
 
-train_file="coqa-train-v1.0.json"
-predict_file="coqa-dev-v1.0.json"
-pretrained_model="roberta-base"
+train_file="hotpot_train_v1.1_new.json"
+predict_file="hotpot_dev_distractor_v1_new.json"
+
+pretrained_model="roberta-large"
 epochs = 1.0
 evaluation_batch_size = 16
 train_batch_size = 4
 MIN_FLOAT = -1e30
 
-class RobertaBaseModel(RobertaModel):
+class RobertaLargeModel(RobertaModel):
     def __init__(self,config, load_pre = False):
-        super(RobertaBaseModel,self).__init__(config)
+        super(RobertaLargeModel,self).__init__(config)
         self.roberta = RobertaModel.from_pretrained(pretrained_model, config=config,) if load_pre else RobertaModel(config)
         hidden_size = config.hidden_size
         self.fc = nn.Linear(hidden_size,hidden_size, bias = False)
@@ -158,8 +159,7 @@ def Write_predictions(model, tokenizer, device, dataset_type = None, output_dire
             result = Result(unique_id=unique_id, start_logits=start_logits, end_logits=end_logits, yes_logits=yes_logits, no_logits=no_logits, unk_logits=unk_logits)
             mod_results.append(result)
 
-    output_prediction_file = os.path.join(output_directory, "predictions-gpt.json")
-    #output_prediction_file = os.path.join(output_directory, "predictions-wc-var3.json")
+    output_prediction_file = os.path.join(output_directory, "predictions.json")
     get_predictions(examples, features, mod_results, 20, 30, True, output_prediction_file, False, tokenizer)
 
 
@@ -172,12 +172,11 @@ def load_dataset(tokenizer, evaluate=False, dataset_type = None, use_gpt = None)
     else:
         processor = Processor()
         if evaluate:
-            examples = processor.get_examples("data", 2,filename=predict_file, threads=12, dataset_type = dataset_type, use_gpt = use_gpt)
-            #examples = processor.get_examples("data", 0,filename=predict_file, threads=12, dataset_type = dataset_type)
+            examples = processor.get_examples("data", 0,filename=predict_file, threads=12, dataset_type = dataset_type, use_gpt = use_gpt)
         else:
             examples = []
             for datas in dataset_type:
-                examples.extend(processor.get_examples("data", 2,filename=train_file, threads=12,dataset_type = datas))
+                examples.extend(processor.get_examples("data", 0,filename=train_file, threads=12,dataset_type = datas))
 
     features, dataset = Extract_Features(examples=examples,
             tokenizer=tokenizer,max_seq_length=512, doc_stride=128, max_query_length=64, is_training=not evaluate, threads=12)
@@ -193,7 +192,7 @@ def manager(isTraining, dataset_type, output_directory, use_gpt = None):
 
     if isTraining:
         tokenizer = RobertaTokenizer.from_pretrained(pretrained_model)
-        model = RobertaBaseModel(config, load_pre = True)
+        model = RobertaLargeModel(config, load_pre = True)
         model.to(device)
         if os.path.exists(output_directory):
             raise ValueError(f"Output directory {output_directory}  already exists, Change output_directory name")
@@ -206,7 +205,7 @@ def manager(isTraining, dataset_type, output_directory, use_gpt = None):
         torch.save(model.state_dict(), os.path.join(output_directory,'tweights.pt'))
 
     else:
-        model = RobertaBaseModel(config)
+        model = RobertaLargeModel(config)
         model.load_state_dict(torch.load(os.path.join(output_directory,'tweights.pt')))
         model.to(device)
         tokenizer = RobertaTokenizer.from_pretrained(output_directory, do_lower_case=True)
@@ -218,9 +217,10 @@ def main():
     output_directory = "Roberta"
     argumentList = sys.argv[1:]
     options = "ht:e:o:"
-    long_options = ["help", "train=","eval=", "output=", "gpt="]
+    long_options = ["help", "train=","eval=", "output=","gpt="]
     try:
         arguments, values = getopt.getopt(argumentList, options, long_options)
+        use_gpt = None
         for currentArgument, currentValue in arguments:
             if currentArgument in ("-h", "--Help"):
                 print ("""python main.py --train [O|C] --eval [O|TS|RG] --output [directory name]\n
@@ -234,14 +234,14 @@ def main():
      
             elif currentArgument in ("-t", "--train"):
                 isTraining = True
-                opts = {'O':[None],'C':[None, 'TS','RG']}
+                opts = {'O':[None],'C':[None, 'RG']}
                 if currentValue in opts:
                     train_dataset_type = opts[currentValue]
                 else:
                     print('See "python main.py --help" for usage')
                     return
             elif currentArgument in ("-e", "--eval"):
-                opts = {'O':[None],'TS':['TS'], 'RG':['RG']}
+                opts = {'O':[None], 'RG':['RG']}
                 if currentValue in opts:
                     eval_dataset_type = opts[currentValue]
                     isEval = True

@@ -14,15 +14,16 @@ import getopt,sys
 
 train_file="coqa-train-v1.0.json"
 predict_file="coqa-dev-v1.0.json"
-pretrained_model="roberta-base"
+
+pretrained_model="roberta-large"
 epochs = 1.0
 evaluation_batch_size = 16
 train_batch_size = 4
 MIN_FLOAT = -1e30
 
-class RobertaBaseModel(RobertaModel):
+class RobertaLargeModel(RobertaModel):
     def __init__(self,config, load_pre = False):
-        super(RobertaBaseModel,self).__init__(config)
+        super(RobertaLargeModel,self).__init__(config)
         self.roberta = RobertaModel.from_pretrained(pretrained_model, config=config,) if load_pre else RobertaModel(config)
         hidden_size = config.hidden_size
         self.fc = nn.Linear(hidden_size,hidden_size, bias = False)
@@ -193,7 +194,7 @@ def manager(isTraining, dataset_type, output_directory, use_gpt = None):
 
     if isTraining:
         tokenizer = RobertaTokenizer.from_pretrained(pretrained_model)
-        model = RobertaBaseModel(config, load_pre = True)
+        model = RobertaLargeModel(config, load_pre = True)
         model.to(device)
         if os.path.exists(output_directory):
             raise ValueError(f"Output directory {output_directory}  already exists, Change output_directory name")
@@ -206,7 +207,7 @@ def manager(isTraining, dataset_type, output_directory, use_gpt = None):
         torch.save(model.state_dict(), os.path.join(output_directory,'tweights.pt'))
 
     else:
-        model = RobertaBaseModel(config)
+        model = RobertaLargeModel(config)
         model.load_state_dict(torch.load(os.path.join(output_directory,'tweights.pt')))
         model.to(device)
         tokenizer = RobertaTokenizer.from_pretrained(output_directory, do_lower_case=True)
