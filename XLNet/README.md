@@ -8,7 +8,7 @@ python main.py --train [O|C] --eval [O|TS|RG] --output [directory]
 ```
 
 --train O for original training
---train C for combined training
+--train C for intervention-based training
 --eval O for eval on original dataset
 --eval TS for eval on TS dataset
 --eval RG for eval on TS-R dataset
